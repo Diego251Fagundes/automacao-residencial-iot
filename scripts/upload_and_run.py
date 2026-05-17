@@ -73,6 +73,28 @@ def wait_for(ser, needle, timeout=5.0):
     return buf.decode('utf-8', errors='ignore')
 
 
+def enter_raw_repl(ser, timeout=5.0):
+    """Try to enter MicroPython raw REPL reliably."""
+    for _ in range(3):
+        try:
+            ser.reset_input_buffer()
+        except Exception:
+            pass
+
+        # Interrupt any running program, then request raw REPL.
+        ser.write(b"\x03\x03")
+        time.sleep(0.2)
+        ser.write(b"\x01")
+
+        out = wait_for(ser, 'raw REPL; CTRL-B to exit', timeout=timeout)
+        if 'raw REPL' in out:
+            return True
+
+        time.sleep(0.2)
+
+    return False
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--port', default='rfc2217://localhost:4000', help='pyserial URL')
@@ -112,9 +134,7 @@ def main():
 
     # Enter raw REPL
     print('Requesting raw REPL (Ctrl-A)')
-    ser.write(b"\x01")
-    out = wait_for(ser, 'raw REPL; CTRL-B to exit', timeout=args.timeout)
-    if 'raw REPL' not in out:
+    if not enter_raw_repl(ser, timeout=args.timeout):
         print('Warning: did not detect raw REPL prompt; continuing anyway')
     else:
         print('Raw REPL ready')
@@ -127,8 +147,8 @@ def main():
         print(' - {} -> {}'.format(local_path, remote_name))
         payload.append("f = open('%s','w')\n" % remote_name)
         # Write in chunks to avoid huge repr issues
-        for i in range(0, len(code), 512):
-            chunk = code[i:i+512]
+        for i in range(0, len(code), 128):
+            chunk = code[i:i+128]
             payload.append("f.write(%r)\n" % chunk)
         payload.append('f.close()\n')
 
@@ -139,7 +159,10 @@ def main():
 
     # Send the program and finish with Ctrl-D to execute
     print('Uploading {} bytes...'.format(len(program)))
-    ser.write(program.encode('utf-8'))
+    encoded = program.encode('utf-8')
+    for i in range(0, len(encoded), 256):
+        ser.write(encoded[i:i+256])
+        time.sleep(0.01)
     time.sleep(0.05)
     ser.write(b"\x04")
 
