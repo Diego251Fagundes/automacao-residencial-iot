@@ -10,6 +10,8 @@ control lines to avoid bootloader, enters raw REPL, writes the file and
 issues a soft reset.
 """
 import argparse
+import os
+import re
 import time
 import serial
 import sys
@@ -18,6 +20,39 @@ import sys
 def read_file(path):
     with open(path, 'r', encoding='utf-8') as f:
         return f.read()
+
+
+def discover_local_dependencies(local_main_path):
+    """Return local sibling modules imported by the main script."""
+    base_dir = os.path.dirname(os.path.abspath(local_main_path))
+    code = read_file(local_main_path)
+    modules = set()
+
+    # Handle lines like "import foo, bar" and "from foo import x".
+    for line in code.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        m_import = re.match(r'^import\s+(.+)$', stripped)
+        if m_import:
+            for part in m_import.group(1).split(','):
+                mod = part.strip().split(' as ')[0].strip()
+                if mod:
+                    modules.add(mod.split('.')[0])
+            continue
+
+        m_from = re.match(r'^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+', stripped)
+        if m_from:
+            modules.add(m_from.group(1).split('.')[0])
+
+    deps = []
+    for module_name in sorted(modules):
+        local_candidate = os.path.join(base_dir, module_name + '.py')
+        if os.path.isfile(local_candidate):
+            deps.append((local_candidate, module_name + '.py'))
+
+    return deps
 
 
 def wait_for(ser, needle, timeout=5.0):
@@ -44,9 +79,22 @@ def main():
     p.add_argument('--local', default='esp32/main.py', help='Local file to upload')
     p.add_argument('--remote', default='main.py', help='Remote filename on device')
     p.add_argument('--timeout', type=float, default=8.0)
+    p.add_argument('--no-auto-deps', action='store_true', help='Do not auto-upload local imported modules')
     args = p.parse_args()
 
-    code = read_file(args.local)
+    files_to_upload = [(args.local, args.remote)]
+    if not args.no_auto_deps:
+        files_to_upload.extend(discover_local_dependencies(args.local))
+
+    # Remove duplicates preserving order by remote filename.
+    dedup = []
+    seen_remote = set()
+    for local_path, remote_name in files_to_upload:
+        if remote_name in seen_remote:
+            continue
+        seen_remote.add(remote_name)
+        dedup.append((local_path, remote_name))
+    files_to_upload = dedup
 
     print('Connecting to', args.port)
     ser = serial.serial_for_url(args.port, baudrate=115200, timeout=0.1)
@@ -71,14 +119,19 @@ def main():
     else:
         print('Raw REPL ready')
 
-    # Prepare payload to write file and reset
+    # Prepare payload to write file(s) and reset
     payload = []
-    payload.append("f = open('%s','w')\n" % args.remote)
-    # write in chunks to avoid huge repr issues
-    for i in range(0, len(code), 512):
-        chunk = code[i:i+512]
-        payload.append("f.write(%r)\n" % chunk)
-    payload.append('f.close()\n')
+    print('Arquivos para upload:')
+    for local_path, remote_name in files_to_upload:
+        code = read_file(local_path)
+        print(' - {} -> {}'.format(local_path, remote_name))
+        payload.append("f = open('%s','w')\n" % remote_name)
+        # Write in chunks to avoid huge repr issues
+        for i in range(0, len(code), 512):
+            chunk = code[i:i+512]
+            payload.append("f.write(%r)\n" % chunk)
+        payload.append('f.close()\n')
+
     payload.append('import machine\n')
     payload.append('machine.reset()\n')
 
