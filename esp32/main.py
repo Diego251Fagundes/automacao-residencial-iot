@@ -122,42 +122,7 @@ def conecta_mqtt():
         print("Erro MQTT:", e)
         return None
 
-# String do site
-def cria_pagina_web():
-    html = """<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Painel IoT - Quarto</title>
-    <style>
-        body { font-family: Arial; text-align: center; margin: 0; background-color: #f4f4f9; }
-        h2 { color: #333; margin-top: 20px; }
-        .card { background: white; padding: 20px; margin: 10px auto; width: 80%; max-width: 400px; border-radius: 10px; box-shadow: 0px 4px 8px rgba(0,0,0,0.2); }
-        .btn { border: none; padding: 10px 20px; color: white; font-size: 16px; margin: 5px; cursor: pointer; border-radius: 5px; }
-        .on { background-color: #4CAF50; }
-        .off { background-color: #f44336; }
-    </style></head><body>
-    <h2>🏡 Controle do Quarto Inteligente</h2>"""
-    
-    html += '<div class="card"><h3>💡 Luz do Corredor</h3>'
-    html += '<p>Status: <b>{}</b></p>'.format('LIGADA' if estado_luz else 'DESLIGADA')
-    html += '<a href="/?luz=on"><button class="btn on">Ligar</button></a>'
-    html += '<a href="/?luz=off"><button class="btn off">Desligar</button></a></div>'
-    
-    html += '<div class="card"><h3>❄️ Ar-Condicionado</h3>'
-    html += '<p>Status: <b>{}</b></p>'.format('LIGADO' if estado_ar else 'DESLIGADO')
-    html += '<a href="/?ar=on"><button class="btn on">Ligar</button></a>'
-    html += '<a href="/?ar=off"><button class="btn off">Desligar</button></a></div>'
-    
-    html += '<div class="card"><h3>🪟 Persiana</h3>'
-    html += '<p>Status: <b>{}</b></p>'.format('ABERTA' if estado_persiana else 'FECHADA')
-    html += '<a href="/?persiana=on"><button class="btn on">Abrir</button></a>'
-    html += '<a href="/?persiana=off"><button class="btn off">Fechar</button></a></div>'
-    
-    html += '<div class="card"><h3>🚨 Alarme (Buzzer)</h3>'
-    html += '<p>Status: <b>{}</b></p>'.format('TOCANDO' if estado_alarme else 'SILENCIADO')
-    html += '<a href="/?alarme=on"><button class="btn on">Tocar</button></a>'
-    html += '<a href="/?alarme=off"><button class="btn off">Silenciar</button></a></div>'
-    
-    html += '</body></html>'
-    return html
+# Web UI removed
 
 # Inicialização
 conecta_wifi()
@@ -208,9 +173,7 @@ while True:
             estado_alarme = False
         
         atualiza_atuadores()
-        resposta = cria_pagina_web()
-        conn.send(b'HTTP/1.1 200 OK\nContent-Type: text/html\nConnection: close\n\n')
-        conn.send(resposta.encode('utf-8'))
+        conn.send(b'HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n')
         conn.close()
     except OSError:
         pass 
