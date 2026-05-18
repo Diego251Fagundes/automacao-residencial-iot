@@ -1,0 +1,412 @@
+[
+    {
+        "id": "40acd8e0d6562256",
+        "type": "tab",
+        "label": "Quarto Inteligente Diego",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "e0a8ce6d05b79f18",
+        "type": "ui_template",
+        "z": "40acd8e0d6562256",
+        "group": "grp_sensores",
+        "name": "CSS Premium UI",
+        "order": 0,
+        "width": 0,
+        "height": 0,
+        "format": "<style>\n    /* Fundo Global */\n    body, md-content, .nr-dashboard-theme, .nr-dashboard-theme md-content {\n        background-color: #0d1117 !important;\n        color: #ffffff !important;\n        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;\n    }\n\n    /* Navbar do Topo */\n    md-toolbar, md-toolbar .md-toolbar-tools, md-toolbar h1, md-toolbar span {\n        background-color: #161b22 !important; \n        color: #ffffff !important;\n        border-bottom: 1px solid #30363d !important;\n    }\n\n    /* Títulos dos Grupos */\n    .nr-dashboard-theme .ui-panel-heading, \n    .nr-dashboard-theme .ui-panel-heading span,\n    .nr-dashboard-theme .ui-panel-heading .title {\n        background: transparent !important;\n        border-bottom: 1px solid #30363d !important;\n        color: #ffffff !important; /* Branco forçado nas tags internas */\n        font-weight: 600 !important;\n        letter-spacing: 0.5px;\n        font-size: 16px !important;\n        text-transform: uppercase;\n    }\n\n    /* Cards */\n    md-card {\n        background: #161b22 !important;\n        border: 1px solid #30363d !important;\n        border-radius: 16px !important;\n        box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;\n        transition: transform 0.2s ease-in-out;\n    }\n    md-card:hover {\n        border-color: #58a6ff !important;\n    }\n\n    /* Botões */\n    .md-button {\n        color: #ffffff !important;\n        border-radius: 10px !important;\n        font-weight: 600 !important;\n        text-transform: none !important;\n        letter-spacing: 0.3px !important;\n        border: 1px solid rgba(255,255,255,0.05) !important;\n        box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;\n        transition: all 0.3s ease !important;\n    }\n    .md-button:hover {\n        filter: brightness(1.2);\n        transform: translateY(-2px);\n        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;\n    }\n\n    /* Textos Base (Labels) */\n    .label, .value, md-icon, ng-md-icon, .ui-text span {\n        color: #ffffff !important; \n    }\n</style>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "global",
+        "x": 350,
+        "y": 20,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b3dbbda89b7aae3e",
+        "type": "mqtt in",
+        "z": "40acd8e0d6562256",
+        "name": "Recebe Sensores",
+        "topic": "diego/quarto/sensores",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "hivemq",
+        "inputs": 0,
+        "x": 120,
+        "y": 140,
+        "wires": [
+            [
+                "d8677f01f16d16d8"
+            ]
+        ]
+    },
+    {
+        "id": "d8677f01f16d16d8",
+        "type": "function",
+        "z": "40acd8e0d6562256",
+        "name": "Formata Dados ",
+        "func": "var msgTemp = {payload: msg.payload.temperatura.toFixed(1)};\n\nvar luz = msg.payload.luminosidade;\nvar clrLuz = luz > 2000 ? '#FFB300' : '#8b949e';\nvar msgLuz = {payload: '<span style=\"color:' + clrLuz + '; font-weight:bold; font-size: 16px;\">' + luz + ' ADC</span>'};\n\nvar msgMov = {payload: msg.payload.movimento == 1 \n    ? '<span style=\"background:#da3633;color:white;padding:4px 10px;border-radius:6px;font-weight:bold;font-size:12px;box-shadow: 0 0 10px rgba(218,54,51,0.5);\">DETECTADA</span>' \n    : '<span style=\"background:#238636;color:white;padding:4px 10px;border-radius:6px;font-weight:bold;font-size:12px;\">SEM MOVIMENTO</span>'};\n\nvar msgPortao = {payload: msg.payload.portao_aberto \n    ? '<span style=\"color:#da3633; font-weight:bold; font-size: 16px;\">🔓 ABERTO</span>' \n    : '<span style=\"color:#238636; font-weight:bold; font-size: 16px;\">🔒 FECHADO</span>'};\n\nreturn [msgTemp, msgLuz, msgMov, msgPortao];",
+        "outputs": 4,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 140,
+        "wires": [
+            [
+                "e3adedf9b2725379"
+            ],
+            [
+                "92fddc34f5d6d79a"
+            ],
+            [
+                "37196a99009c806d"
+            ],
+            [
+                "ecb3e8d2ef2f6db9"
+            ]
+        ]
+    },
+    {
+        "id": "e3adedf9b2725379",
+        "type": "ui_gauge",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_sensores",
+        "order": 1,
+        "width": "6",
+        "height": "4",
+        "gtype": "gage",
+        "title": "Temperatura",
+        "label": "ºC",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "50",
+        "colors": [
+            "#58a6ff",
+            "#3fb950",
+            "#da3633"
+        ],
+        "seg1": "19",
+        "seg2": "27",
+        "x": 590,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "92fddc34f5d6d79a",
+        "type": "ui_text",
+        "z": "40acd8e0d6562256",
+        "group": "grp_sensores",
+        "order": 2,
+        "width": "6",
+        "height": "1",
+        "name": "",
+        "label": "<i class=\"mi-lightbulb_outline\"></i> Luminosidade:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 710,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "37196a99009c806d",
+        "type": "ui_text",
+        "z": "40acd8e0d6562256",
+        "group": "grp_sensores",
+        "order": 3,
+        "width": "6",
+        "height": "1",
+        "name": "",
+        "label": "<i class=\"mi-directions_run\"></i> Presença:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 690,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "ecb3e8d2ef2f6db9",
+        "type": "ui_text",
+        "z": "40acd8e0d6562256",
+        "group": "grp_sensores",
+        "order": 4,
+        "width": "6",
+        "height": "1",
+        "name": "",
+        "label": "<i class=\"mi-sensor_door\"></i> Portão:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 670,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "e820b6b7446bd966",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 1,
+        "width": "3",
+        "height": "1",
+        "label": "Ligar Luz",
+        "color": "#ffffff",
+        "bgcolor": "#238636",
+        "icon": "mi-lightbulb",
+        "payload": "LUZ_ON",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 320,
+        "y": 260,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "5aba3e36eb0814eb",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 2,
+        "width": "3",
+        "height": "1",
+        "label": "Desligar",
+        "color": "#ffffff",
+        "bgcolor": "#da3633",
+        "icon": "mi-lightbulb_outline",
+        "payload": "LUZ_OFF",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 320,
+        "y": 300,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "8c4b6f02e38d01aa",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 3,
+        "width": "3",
+        "height": "1",
+        "label": "Ligar Ar",
+        "color": "#ffffff",
+        "bgcolor": "#238636",
+        "icon": "mi-ac_unit",
+        "payload": "AR_ON",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 320,
+        "y": 340,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "3e5329ef190b97d4",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 4,
+        "width": "3",
+        "height": "1",
+        "label": "Desligar",
+        "color": "#ffffff",
+        "bgcolor": "#da3633",
+        "icon": "mi-power_settings_new",
+        "payload": "AR_OFF",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 320,
+        "y": 380,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "d6acf7c513bf863d",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 5,
+        "width": "3",
+        "height": "1",
+        "passthru": false,
+        "label": "Abrir Persiana",
+        "tooltip": "",
+        "color": "#ffffff",
+        "bgcolor": "#238636",
+        "className": "",
+        "icon": "mi-blinds",
+        "payload": "PERSIANA_ON",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "topicType": "str",
+        "x": 340,
+        "y": 420,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "67af88343b100757",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 6,
+        "width": "3",
+        "height": "1",
+        "label": "Fechar",
+        "color": "#ffffff",
+        "bgcolor": "#da3633",
+        "icon": "mi-blinds_closed",
+        "payload": "PERSIANA_OFF",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 320,
+        "y": 460,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "a488e9e1feb786d1",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 7,
+        "width": "3",
+        "height": "1",
+        "label": "Ativar",
+        "color": "#ffffff",
+        "bgcolor": "#238636",
+        "icon": "mi-notifications_active",
+        "payload": "ALARME_ON",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 310,
+        "y": 500,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "9e461ce5e248d195",
+        "type": "ui_button",
+        "z": "40acd8e0d6562256",
+        "name": "",
+        "group": "grp_atuadores",
+        "order": 8,
+        "width": "3",
+        "height": "1",
+        "label": "Desativar",
+        "color": "#ffffff",
+        "bgcolor": "#da3633",
+        "icon": "mi-notifications_off",
+        "payload": "ALARME_OFF",
+        "payloadType": "str",
+        "topic": "diego/quarto/comandos",
+        "x": 320,
+        "y": 540,
+        "wires": [
+            [
+                "06926227c5075ab8"
+            ]
+        ]
+    },
+    {
+        "id": "06926227c5075ab8",
+        "type": "mqtt out",
+        "z": "40acd8e0d6562256",
+        "name": "Envia Comandos",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "hivemq",
+        "x": 610,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "grp_sensores",
+        "type": "ui_group",
+        "name": "Leitura dos Sensores",
+        "tab": "tab_quarto",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "hivemq",
+        "type": "mqtt-broker",
+        "name": "HiveMQ Public",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "",
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true
+    },
+    {
+        "id": "grp_atuadores",
+        "type": "ui_group",
+        "name": "Painel de Controle",
+        "tab": "tab_quarto",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "tab_quarto",
+        "type": "ui_tab",
+        "name": "Automação Residencial",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "809abcae11eb4601",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-dashboard": "3.6.6"
+        }
+    }
+]
